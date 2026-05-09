@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name | title }} - DevopsHarmony Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        .status {
+            background: rgba(46, 204, 113, 0.8);
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+        .info-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 5px;
+        }
+        .footer {
+            margin-top: 2rem;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 {{ app_name | title }} Deployment</h1>
+        <div class="status">
+            ✅ Nginx Successfully Deployed via DevopsHarmony Pipeline
+        </div>
+
+        <p>This server was automatically provisioned and configured using:</p>
+        <ul style="text-align: left; display: inline-block;">
+            <li>Terraform for infrastructure</li>
+            <li>Ansible for application deployment</li>
+            <li>DevopsHarmony orchestration pipeline</li>
+        </ul>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Server Info:</strong><br>
+                Private IP: {{ deployment_server_ip | default('unknown') }}<br>
+                {% if public_ip is defined %}Public IP: {{ public_ip }}<br>{% endif %}
+                {% if instance_id is defined %}Instance ID: {{ instance_id }}<br>{% endif %}
+            </div>
+            <div class="info-item">
+                <strong>Deployment Info:</strong><br>
+                Timestamp: {{ deployment_timestamp }}<br>
+                Study: {{ study_name | default('N/A') }}<br>
+                Environment: {{ deploy_env | default('N/A') }}
+            </div>
+            <div class="info-item">
+                <strong>System Info:</strong><br>
+                OS: {{ ansible_distribution }} {{ ansible_distribution_version }}<br>
+                Nginx Version: {{ deployment_nginx_version | default('unknown') }}
+            </div>
+            <div class="info-item">
+                <strong>Pipeline Info:</strong><br>
+                Execution ID: {{ exec_id | default('N/A') }}<br>
+                Step: Ansible Deployment<br>
+                Status: Active
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Powered by DevopsHarmony Orchestration Platform</p>
+            <p><a href="/deployment-info.json" style="color: #87CEEB;">View Deployment JSON</a></p>
+        </div>
+    </div>
+</body>
+</html>

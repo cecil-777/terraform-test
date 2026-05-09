@@ -1,0 +1,58 @@
+---
+# state-playbook.yml captures machine state facts for plan/verify comparison.
+#
+# Used by:
+#   AnsibleStateCaptureStep  (Plan pipeline) - baseline snapshot
+#   AnsibleStateVerifyStep   (Execute pipeline) - drift comparison
+#
+# Required extra-vars (passed by the Python step):
+#   local_state_output_file   Absolute path on the Ansible control machine
+#                             where the JSON snapshot will be written.
+#   study_name                Study identifier
+#   deploy_env                Deployment environment (dev/staging/prod)
+#   exec_id                   Pipeline execution UUID
+#
+# The facts dict is written to the CONTROL machine via delegate_to: localhost.
+# No files are created on the remote target.
+#
+# To extend the captured facts, add keys to the state_facts var block below
+# and add the corresponding key names to _DEFAULT_COMPARE_KEYS in ansible_state.py.
+
+- name: Capture machine state facts
+  hosts: targets
+  gather_facts: true
+  tasks:
+    - name: Collect root filesystem disk usage
+      ansible.builtin.command: df -BM / --output=used,size
+      register: disk_output
+      changed_when: false
+
+    - name: Ensure local state output directory exists
+      ansible.builtin.file:
+        path: "{{ local_state_output_file | dirname }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+
+    - name: Write state snapshot to control machine
+      ansible.builtin.copy:
+        content: "{{ state_facts | to_nice_json }}"
+        dest: "{{ local_state_output_file }}"
+        mode: "0644"
+      vars:
+        state_facts:
+          os_family: "{{ ansible_os_family | default('') }}"
+          distribution: "{{ ansible_distribution | default('') }}"
+          distribution_version: "{{ ansible_distribution_version | default('') }}"
+          kernel: "{{ ansible_kernel | default('') }}"
+          architecture: "{{ ansible_architecture | default('') }}"
+          hostname: "{{ ansible_hostname | default('') }}"
+          total_memory_mb: "{{ ansible_memtotal_mb | default(0) | int }}"
+          cpu_count: "{{ ansible_processor_vcpus | default(ansible_processor_count | default(0)) | int }}"
+          ipv4_addresses: "{{ ansible_all_ipv4_addresses | default([]) }}"
+          disk_root: "{{ disk_output.stdout_lines | last | default('') }}"
+          study_name: "{{ study_name | default('') }}"
+          deploy_env: "{{ deploy_env | default('') }}"
+          captured_at: "{{ ansible_date_time.iso8601 | default('') }}"
+      delegate_to: localhost

@@ -1,0 +1,153 @@
+---
+# Nginx deployment playbook
+- name: Deploy Nginx Web Server
+  hosts: web_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    nginx_port: 80
+    app_name: "{{ study_name | default('dev-hmony') }}"
+    web_root: "/var/www/{{ app_name }}"
+    deployment_timestamp: "{{ ansible_date_time.iso8601 }}"
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      tags: [setup]
+
+    - name: Install Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+      tags: [install]
+
+    - name: Install additional packages
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - curl
+        - jq
+        - htop
+      tags: [install]
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+      tags: [info]
+
+    - name: Resolve deployment facts
+      ansible.builtin.set_fact:
+        deployment_nginx_version: >-
+          {{ ansible_facts.packages.nginx[0].version
+             if ansible_facts.packages is defined
+             and ansible_facts.packages.nginx is defined
+             and ansible_facts.packages.nginx | length > 0
+             else 'unknown' }}
+        deployment_server_ip: >-
+          {{ ansible_default_ipv4.address
+             if ansible_default_ipv4 is defined
+             and ansible_default_ipv4.address is defined
+             else 'unknown' }}
+      tags: [info]
+
+    - name: Create web directory
+      ansible.builtin.file:
+        path: "{{ web_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+      tags: [setup]
+
+    - name: Create custom HTML page
+      ansible.builtin.template:
+        src: index.html.j2
+        dest: "{{ web_root }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      notify: restart nginx
+      tags: [deploy]
+
+    - name: Create Nginx site configuration
+      ansible.builtin.template:
+        src: nginx-site.conf.j2
+        dest: "/etc/nginx/sites-available/{{ app_name }}"
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart nginx
+      tags: [config]
+
+    - name: Enable Nginx site
+      ansible.builtin.file:
+        src: "/etc/nginx/sites-available/{{ app_name }}"
+        dest: "/etc/nginx/sites-enabled/{{ app_name }}"
+        state: link
+      notify: restart nginx
+      tags: [config]
+
+    - name: Disable default Nginx site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: restart nginx
+      tags: [config]
+
+    - name: Test Nginx configuration
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+      tags: [config]
+
+    - name: Start and enable Nginx service
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: true
+      tags: [service]
+
+    - name: Wait for Nginx to be available
+      ansible.builtin.wait_for:
+        port: "{{ nginx_port }}"
+        host: "{{ inventory_hostname }}"
+        delay: 5
+        timeout: 30
+      tags: [verify]
+
+    - name: Test web server response
+      ansible.builtin.uri:
+        url: "http://{{ inventory_hostname }}:{{ nginx_port }}"
+        method: GET
+        return_content: true
+      register: web_test
+      tags: [verify]
+
+    - name: Create deployment info
+      ansible.builtin.copy:
+        content: |
+          {
+            "deployment_timestamp": "{{ deployment_timestamp }}",
+            "nginx_version": "{{ deployment_nginx_version }}",
+            "app_name": "{{ app_name }}",
+            "server_ip": "{{ deployment_server_ip }}",
+            "public_ip": "{{ public_ip | default('unknown') }}",
+            "instance_id": "{{ instance_id | default('unknown') }}",
+            "nginx_status": "{{ 'active' if nginx_test.rc == 0 else 'error' }}",
+            "web_test_status": "{{ 'success' if web_test.status == 200 else 'failed' }}"
+          }
+        dest: "/var/www/{{ app_name }}/deployment-info.json"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      tags: [info]
+
+  handlers:
+    - name: restart nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
