@@ -39,7 +39,13 @@ variable "instance_type" {
 }
 
 variable "key_pair_name" {
-  description = "AWS key pair name (optional)"
+  description = "AWS key pair name"
+  type        = string
+  default     = null
+}
+
+variable "ssh_public_key" {
+  description = "SSH public key material to import as an AWS key pair"
   type        = string
   default     = null
 }
@@ -169,13 +175,28 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+# Managed key pair — when public key changes, instance is replaced automatically
+resource "aws_key_pair" "deployer" {
+  count      = var.ssh_public_key != null ? 1 : 0
+  key_name   = var.key_pair_name
+  public_key = var.ssh_public_key
+}
+
+locals {
+  key_name = var.ssh_public_key != null ? aws_key_pair.deployer[0].key_name : var.key_pair_name
+}
+
 # EC2 Instance
 resource "aws_instance" "web" {
   ami                    = local.ubuntu_ami_id
   instance_type          = var.instance_type
-  key_name              = var.key_pair_name != null ? var.key_pair_name : null
-  subnet_id             = aws_subnet.public.id
+  key_name               = local.key_name
+  subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web.id]
+
+  lifecycle {
+    replace_triggered_by = [aws_key_pair.deployer]
+  }
 
   user_data = <<-EOF
     #!/bin/bash
