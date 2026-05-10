@@ -154,15 +154,15 @@ resource "aws_security_group" "web" {
 # Regional AMI mapping for Ubuntu 22.04 LTS - more comprehensive
 locals {
   ami_mapping = {
-    "us-east-1"      = "ami-0c02fb55956c7d316"  # Ubuntu 22.04 LTS
-    "us-west-2"      = "ami-017fecd1353bcc96e"  # Ubuntu 22.04 LTS  
-    "us-west-1"      = "ami-0d382e80be7ffdae5"  # Ubuntu 22.04 LTS
-    "eu-west-1"      = "ami-096800910c1b781ba"  # Ubuntu 22.04 LTS
-    "eu-central-1"   = "ami-06dd92ecc74fdfb36"  # Ubuntu 22.04 LTS
-    "ap-south-1"     = "ami-0f5ee92e2d63afc18"  # Ubuntu 22.04 LTS
-    "ap-southeast-1" = "ami-0d058fe428540cd89"  # Ubuntu 22.04 LTS
-    "ap-northeast-1" = "ami-09a81b370b76de6a2"  # Ubuntu 22.04 LTS
-    "sa-east-1"      = "ami-0c820c196a818d66a"  # Ubuntu 22.04 LTS
+    "us-east-1"      = "ami-0261755bbcb8c4a84"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "us-west-2"      = "ami-0735c191cf914754d"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "us-west-1"      = "ami-0a0409af1cb2d6bac"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "eu-west-1"      = "ami-01dd271720c1ba44f"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "eu-central-1"   = "ami-0faab6bdbac9486fb"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "ap-south-1"     = "ami-05e00961530ae1b55"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "ap-southeast-1" = "ami-0753e0e42b20e96e3"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "ap-northeast-1" = "ami-07c589821f2b353aa"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "sa-east-1"      = "ami-0b6c2d49148000cd5"  # Ubuntu 22.04 LTS (Jammy) — Canonical
   }
 }
 
