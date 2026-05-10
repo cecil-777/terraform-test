@@ -154,7 +154,7 @@ resource "aws_security_group" "web" {
 # Regional AMI mapping for Ubuntu 22.04 LTS - more comprehensive
 locals {
   ami_mapping = {
-    "us-east-1"      = "ami-0261755bbcb8c4a84"  # Ubuntu 22.04 LTS (Jammy) — Canonical
+    "us-east-1"      = "ami-00403f401ee6a4b98"  # Ubuntu 22.04 LTS (Jammy) — Canonical
     "us-west-2"      = "ami-0735c191cf914754d"  # Ubuntu 22.04 LTS (Jammy) — Canonical
     "us-west-1"      = "ami-0a0409af1cb2d6bac"  # Ubuntu 22.04 LTS (Jammy) — Canonical
     "eu-west-1"      = "ami-01dd271720c1ba44f"  # Ubuntu 22.04 LTS (Jammy) — Canonical
